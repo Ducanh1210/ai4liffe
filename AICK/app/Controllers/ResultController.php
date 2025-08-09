@@ -52,13 +52,9 @@ class ResultController extends Controller
         ]);
 
         $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
-        $baseUrl = rtrim(dirname($scriptName), '/');
-        if ($baseUrl === '/') {
-            $baseUrl = '';
-        }
         $baseIndex = rtrim($scriptName, '/');
-        // Prefer pretty URL; fallback to index.php route when rewrite off
-        $target = ($this->hasRewrite() ? ($baseUrl . '/result/' . $assessmentId) : ($baseIndex . '/result/' . $assessmentId));
+        // Luôn dùng index.php để tránh phụ thuộc rewrite
+        $target = $baseIndex . '/result/' . $assessmentId;
         header('Location: ' . $target);
         exit;
     }
@@ -75,18 +71,42 @@ class ResultController extends Controller
         }
 
         $ai = json_decode($record['ai_result_json'], true) ?? [];
+        $rec = $ai['recommended_major'] ?? null;
+
+        // Build focus courses list from DB for recommended major (early semesters)
+        $focusCourses = [];
+        if ($rec) {
+            $currModel = new CurriculumModel();
+            $majorModel = new MajorModel();
+            $majorId = (int) ($rec['id'] ?? 0);
+            if ($majorId <= 0 && !empty($rec['code'])) {
+                // Try to resolve by code
+                foreach ($majorModel->all() as $m) {
+                    if (strcasecmp($m['code'], $rec['code']) === 0) {
+                        $majorId = (int) $m['id'];
+                        break;
+                    }
+                }
+            }
+            if ($majorId > 0) {
+                $curr = $currModel->byMajor($majorId);
+                // prioritize ky1, ky2 items
+                $early = array_values(array_filter($curr, fn($c) => in_array(strtolower($c['semester']), ['ky1', 'ky2'])));
+                $fallback = $early ?: $curr;
+                $focusCourses = array_slice($fallback, 0, 5);
+            }
+        }
 
         $this->view('result', [
             'record' => $record,
             'ai' => $ai,
+            'focusCourses' => $focusCourses,
         ]);
     }
 
     private function hasRewrite(): bool
     {
-        // Heuristic: if REQUEST_URI contains '/index.php', assume no rewrite
-        $uri = $_SERVER['REQUEST_URI'] ?? '';
-        return strpos($uri, '/index.php') === false;
+        return false;
     }
 }
 

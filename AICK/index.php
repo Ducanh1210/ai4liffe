@@ -60,10 +60,7 @@ $router->get('/', 'HomeController@index');
 $router->post('/recommend', 'ResultController@recommend');
 $router->get('/result/(?P<id>\\d+)', 'ResultController@show');
 $router->get('/stats', 'AdminController@stats');
-// Chat feature
-$router->get('/chat', 'ChatController@index');
-$router->post('/api/chat', 'ChatController@api');
-$router->post('/api/chat-stream', 'ChatController@stream');
+// Chat removed
 
 // Dispatch current request
 $router->dispatch();

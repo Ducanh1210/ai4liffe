@@ -9,10 +9,10 @@
   <?php
   $baseUrl = $baseUrl ?? '';
   $baseIndex = $baseIndex ?? $baseUrl . '/index.php';
-  $hasRewrite = (strpos($_SERVER['REQUEST_URI'] ?? '', '/index.php') === false);
-  $hrefHome = $hasRewrite ? ($baseUrl . '/') : ($baseIndex . '/');
-  $hrefStats = $hasRewrite ? ($baseUrl . '/stats') : ($baseIndex . '/stats');
-  $hrefChat = $hasRewrite ? ($baseUrl . '/chat') : ($baseIndex . '/chat');
+  // To tránh Not Found khi chưa bật rewrite, luôn dùng index.php cho route nội bộ
+  $hrefHome = $baseIndex . '/';
+  $hrefStats = $baseIndex . '/stats';
+  $hrefChat = $baseIndex . '/chat';
   ?>
   <link rel="stylesheet" href="<?= $baseUrl ?>/public/css/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,13 +22,15 @@
 
 <body>
   <header class="site-header">
-    <div class="container">
-      <a class="brand" href="<?= htmlspecialchars($hrefHome) ?>">FPOLY Advisor</a>
-      <nav>
-        <a href="<?= htmlspecialchars($hrefHome) ?>">Trang chủ</a>
-        <a href="<?= htmlspecialchars($hrefStats) ?>">Thống kê</a>
-        <a href="<?= htmlspecialchars($hrefChat) ?>">Chat</a>
-        <a href="https://caodang.fpt.edu.vn" target="_blank" rel="noopener">FPT Polytechnic</a>
+    <div class="container topbar">
+      <a class="brand" href="<?= htmlspecialchars($hrefHome) ?>">
+        <span class="brand-logo">FP</span>
+        <span class="brand-text">FPOLY Advisor</span>
+      </a>
+      <nav class="nav">
+        <a class="pill" href="<?= htmlspecialchars($hrefHome) ?>">Trang chủ</a>
+        <a class="pill" href="<?= htmlspecialchars($hrefStats) ?>">Thống kê</a>
+        <a class="pill" href="https://caodang.fpt.edu.vn" target="_blank" rel="noopener">FPT Polytechnic</a>
       </nav>
     </div>
   </header>

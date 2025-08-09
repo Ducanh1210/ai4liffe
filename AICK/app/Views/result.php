@@ -27,6 +27,15 @@ $rec = $ai['recommended_major'] ?? null;
     </ul>
   <?php endif; ?>
 
+  <?php if (!empty($focusCourses)): ?>
+    <h3>Môn học nên ưu tiên (gợi ý)</h3>
+    <ul>
+      <?php foreach ($focusCourses as $fc): ?>
+        <li>[<?= htmlspecialchars($fc['semester']) ?>] <?= htmlspecialchars($fc['code']) ?> - <?= htmlspecialchars($fc['name']) ?> (<?= (int)$fc['credits'] ?> tín)</li>
+      <?php endforeach; ?>
+    </ul>
+  <?php endif; ?>
+
   <?php if (!empty($ai['study_plan'])): ?>
     <h3>Kế hoạch học tập tham khảo</h3>
     <div class="table">
@@ -56,20 +65,33 @@ $rec = $ai['recommended_major'] ?? null;
   <?php $baseUrl = $baseUrl ?? ''; $baseIndex = $baseIndex ?? $baseUrl.'/index.php'; $hasRewrite = (strpos($_SERVER['REQUEST_URI'] ?? '', '/index.php') === false); $homeHref = $hasRewrite ? ($baseUrl.'/') : ($baseIndex.'/'); ?>
   <div class="actions">
     <a class="btn" href="<?= htmlspecialchars($homeHref) ?>">Tạo tư vấn mới</a>
-    <button class="btn" id="btn-download">Tải infographic</button>
+    <button class="btn" id="btn-copy">Sao chép link</button>
+    <button class="btn" id="btn-qr">Tải QR</button>
+    <button class="btn btn-primary" id="btn-download">Tải infographic</button>
   </div>
 </section>
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script>
   const url = window.location.href;
-  QRCode.toCanvas(document.getElementById('qr'), url, { width: 96 });
+  const qrCanvas = document.createElement('canvas');
+  QRCode.toCanvas(qrCanvas, url, { width: 96 });
+  document.getElementById('qr').appendChild(qrCanvas);
   document.getElementById('btn-download').addEventListener('click', async () => {
     const el = document.querySelector('.card');
     const blob = await htmlToImage(el);
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'fpoly-advisor-<?= (int)$record['id'] ?>.png';
+    a.click();
+  });
+  document.getElementById('btn-copy').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(url); alert('Đã sao chép liên kết'); } catch(e) { prompt('Sao chép liên kết:', url); }
+  });
+  document.getElementById('btn-qr').addEventListener('click', () => {
+    const a = document.createElement('a');
+    a.href = qrCanvas.toDataURL('image/png');
+    a.download = 'qr-<?= (int)$record['id'] ?>.png';
     a.click();
   });
 </script>

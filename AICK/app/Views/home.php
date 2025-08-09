@@ -6,8 +6,8 @@
 <section class="card">
   <?php $baseUrl = $baseUrl ?? '';
   $baseIndex = $baseIndex ?? $baseUrl . '/index.php'; ?>
-  <form method="post" action="<?= $baseUrl ?>/recommend" class="grid-form"
-    onsubmit="if (!window.REWRITE_ON) { this.action='<?= $baseIndex ?>/recommend'; }">
+  <!-- Luôn post qua index.php để tránh phụ thuộc rewrite -->
+  <form method="post" action="<?= $baseIndex ?>/recommend" class="grid-form">
     <div class="field">
       <label>Họ và tên</label>
       <input name="name" required placeholder="Nguyễn Văn A" />
