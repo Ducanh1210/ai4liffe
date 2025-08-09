@@ -60,6 +60,8 @@ $router->get('/', 'HomeController@index');
 $router->post('/recommend', 'ResultController@recommend');
 $router->get('/result/(?P<id>\\d+)', 'ResultController@show');
 $router->get('/stats', 'AdminController@stats');
+// QR image proxy
+$router->get('/qr', 'QrController@image');
 // Chat removed
 
 // Dispatch current request

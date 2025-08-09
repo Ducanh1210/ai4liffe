@@ -75,6 +75,9 @@ class ResultController extends Controller
 
         // Build focus courses list from DB for recommended major (early semesters)
         $focusCourses = [];
+        $skillsImprove = [];
+        $input = json_decode($record['input_json'] ?? '{}', true) ?? [];
+        $studentText = strtolower(trim(($input['interests'] ?? '') . ' ' . ($input['strengths'] ?? '') . ' ' . ($input['favorite_subjects'] ?? '') . ' ' . ($input['career_orientation'] ?? '') . ' ' . ($input['affinities'] ?? '')));
         if ($rec) {
             $currModel = new CurriculumModel();
             $majorModel = new MajorModel();
@@ -90,10 +93,38 @@ class ResultController extends Controller
             }
             if ($majorId > 0) {
                 $curr = $currModel->byMajor($majorId);
-                // prioritize ky1, ky2 items
-                $early = array_values(array_filter($curr, fn($c) => in_array(strtolower($c['semester']), ['ky1', 'ky2'])));
-                $fallback = $early ?: $curr;
-                $focusCourses = array_slice($fallback, 0, 5);
+                // Prefer specialized semesters first (ky3, ky4, ky5), then fill with earlier ones
+                $spec = array_values(array_filter($curr, fn($c) => in_array(strtolower($c['semester']), ['ky3', 'ky4', 'ky5'])));
+                $nonSpec = array_values(array_filter($curr, fn($c) => in_array(strtolower($c['semester']), ['ky1', 'ky2'])));
+                $ordered = array_merge($spec, $nonSpec);
+                // Avoid duplicates just in case
+                $seen = [];
+                $focusCourses = [];
+                foreach ($ordered as $c) {
+                    $key = ($c['code'] ?? '') . '|' . ($c['name'] ?? '');
+                    if (!isset($seen[$key])) {
+                        $seen[$key] = true;
+                        $focusCourses[] = $c;
+                    }
+                    if (count($focusCourses) >= 5)
+                        break;
+                }
+                // Compute skills to improve from major skills list
+                $skillModel = new SkillModel();
+                $skills = $skillModel->byMajor($majorId);
+                $scores = [];
+                foreach ($skills as $sk) {
+                    $tokens = array_values(array_filter(preg_split('/[^\p{L}\p{N}]+/u', mb_strtolower($sk, 'UTF-8')), fn($t) => mb_strlen($t, 'UTF-8') >= 4));
+                    $hit = 0;
+                    foreach ($tokens as $t) {
+                        if ($t !== '' && strpos($studentText, $t) !== false) {
+                            $hit++;
+                        }
+                    }
+                    $scores[] = ['skill' => $sk, 'match' => $hit];
+                }
+                usort($scores, fn($a, $b) => $a['match'] <=> $b['match']);
+                $skillsImprove = array_map(fn($x) => $x['skill'], array_slice($scores, 0, 5));
             }
         }
 
@@ -101,6 +132,7 @@ class ResultController extends Controller
             'record' => $record,
             'ai' => $ai,
             'focusCourses' => $focusCourses,
+            'skillsImprove' => $skillsImprove,
         ]);
     }
 
